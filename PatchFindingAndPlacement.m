@@ -1,57 +1,77 @@
 function PatchFindingAndPlacement()
-%     patchDim = [64, 64];
-%     overlapDim = [64,16];
-%     originalImage = double((imread('C:\Users\Jonathan\Desktop\lily2_input', 'gif')));
+    patchDim = [64, 64];
+    overlapDim = [64,16];
+    originalImage = double((imread('C:\Users\Jonathan\Desktop\lily2_input', 'gif')));
 %     patchDim = [32, 32];
 %     overlapDim = [32,8];
 %     originalImage = double((imread('C:\Users\Jonathan\Desktop\olives', 'gif')));
-    patchDim = [16, 16];
-    overlapDim = [16,4];
-    originalImage = double(rgb2gray((imread('C:\Users\Jonathan\Desktop\161', 'jpeg'))));
+%     patchDim = [16, 16];
+%     overlapDim = [16,4];
+%     originalImage = double(rgb2gray((imread('C:\Users\Jonathan\Desktop\161', 'jpeg'))));
     minimum = min(originalImage(:));
     maxim = max(originalImage(:));
     originalImage = originalImage - minimum;
-%     originalImage = originalImage.*(50/(maxim-minimum));
-%     originalImage = originalImage.*(70/(maxim-minimum));
     originalImage = originalImage.*(50/(maxim-minimum));
+%     originalImage = originalImage.*(70/(maxim-minimum));
+%     originalImage = originalImage.*(50/(maxim-minimum));
     dim = size(originalImage);
     newImage = zeros(dim(1) * 3 - 3 * overlapDim(2), dim(2) * 3 - 3 * overlapDim(2));
     finalDim = size(newImage);
+    %previosPointArray = zeros(finalDim(1)/patchDim(1), finalDim(2)/patchDim(2));
     r = 1;
-    x = 0;
-    y = 0;
+    x = 1;
+    y = 1;
     while r < finalDim(1)
         c = 1;
         while c < finalDim(2)
             if r == 1
                 if c == 1
-                    x = rand * (dim(1) - patchDim(1)) + 1;
-                    y = rand * (dim(2) - patchDim(2)) + 1;
+                    x = 5;%rand * (dim(1) - patchDim(1)) + 1;
+                    y = 7;%rand * (dim(2) - patchDim(2)) + 1;
                     x = int32(x);
                     y = int32(y);
                 else
                     overlap = GetSection(newImage, r, c, overlapDim(1), overlapDim(2));
-                    SSD = SSDWithAreaExclusion(overlap, originalImage, x - overlapDim(1), y + patchDim(2)- overlapDim(2), overlapDim(1), overlapDim(2), patchDim);
+                    SSD = SSDWithAreaExclusion(overlap, originalImage, x, y, overlapDim(1), overlapDim(2), patchDim);
                     coord = FindMin(SSD);
                     x = coord(1);
                     y = coord(2);
                 end
-                patch = GetSection(originalImage, x, y, patchDim(1), patchDim(2));
-                newImage = PlaceSection(newImage, patch, r, c, overlapDim);  
             else
                 if c == 1
                     overlap = GetSection(newImage, r, c, overlapDim(2), overlapDim(1));
-                    SSD = SSDWithAreaExclusion(overlap, originalImage, x - overlapDim(1), y + patchDim(2)- overlapDim(2), overlapDim(1), overlapDim(2), patchDim);
+                    SSD = SSDWithAreaExclusion(overlap, originalImage, x, y, overlapDim(2), overlapDim(1), patchDim);
                     coord = FindMin(SSD);
                     x = coord(1);
-                    y = coord(2);
-                    patch = GetSection(originalImage, x, y, patchDim(1), patchDim(2));
-                    newImage = PlaceSection(newImage, patch, r, c, overlapDim); 
-                    c = c + patchDim(2) - overlapDim(2);   
+                    y = coord(2); 
                 else
+                    overlap = GetSection(newImage, r, c, overlapDim(1), overlapDim(2));
+                    SSDVert = SSDWithAreaExclusion(overlap, originalImage, x, y, overlapDim(1), overlapDim(2), patchDim);
                     
+                    overlap = GetSection(newImage, r, c, overlapDim(2), overlapDim(1));
+                    SSDHori = SSDWithAreaExclusion(overlap, originalImage, x, y, overlapDim(2), overlapDim(1), patchDim);
+                    
+%                     dim = size(SSDVert);
+%                     SSD = zeros(dim(1), dim(2));
+%                     for i = 1:dim(1)
+%                        for j = 1:dim(2)
+%                           if(SSDVert(i,j) == 255 && SSDHori(i,j) == 255)
+%                               SSD(i,j) = 255;
+%                           else
+%                               SSD(i,j) = (SSDVert(i,j) - SSDHori(i,j))^2;
+%                           end
+%                        end
+%                     end
+                        
+                    SSD = SSDVert + SSDHori;
+                        
+                    coord = FindMin(SSD);
+                    x = coord(1);
+                    y = coord(2);                    
                 end
             end
+            patch = GetSection(originalImage, x, y, patchDim(1), patchDim(2));
+            newImage = PlaceSection(newImage, patch, r, c, overlapDim);
             c = c + patchDim(2) - overlapDim(2);   
         end
         r = r + patchDim(1) - overlapDim(2);
@@ -83,7 +103,7 @@ function newImage = PlaceSection(Image, patch, r, c, overlapDim)
     if r == 1
         if c > 1
             overlap = VerticalSeamFind(GetSection(Image, r, c, overlapDim(1), overlapDim(2)), GetSection(patch, 1, 1, overlapDim(1), overlapDim(2)));
-            for x = r:r+overlapDim(1)-1
+            for x = r : (dim(1) + r - 1)
                Image(x,c: c + overlapDim(2) - 1) = overlap(x - r + 1, 1:overlapDim(2));
                Image(x,c + overlapDim(2) :(dim(2)+ c )) = patch(x - r + 1, overlapDim(2):dim(2));
             end
@@ -93,8 +113,18 @@ function newImage = PlaceSection(Image, patch, r, c, overlapDim)
             end
         end
     else
-        if c > 1
-            notDone = 0
+        if c > 1  
+            overlap = VerticalSeamFind(GetSection(Image, r, c, overlapDim(1), overlapDim(2)), GetSection(patch, 1, 1, overlapDim(1), overlapDim(2)));
+            for x = r:r+overlapDim(1)-1
+               Image(x ,c: c + overlapDim(2) - 1) = overlap(x - r + 1, 1:overlapDim(2));
+            end     
+            overlap = HorizontalSeamFind(GetSection(Image, r, c, overlapDim(2), overlapDim(1)), GetSection(patch, 1, 1, overlapDim(2), overlapDim(1)));
+            for x = r:r+overlapDim(2)-1
+               Image(x,c: c + overlapDim(1) - 1) = overlap(x - r + 1, 1:overlapDim(1));
+            end    
+            for x = r+overlapDim(2):r+overlapDim(1)-1
+                Image(x ,c + overlapDim(2) :(dim(2)+ c )) = patch(x - r + 1, overlapDim(2):dim(2));
+            end
         else
             overlap = HorizontalSeamFind(GetSection(Image, r, c, overlapDim(2), overlapDim(1)), GetSection(patch, 1, 1, overlapDim(2), overlapDim(1)));
             for x = r:r+overlapDim(2)-1
@@ -134,7 +164,7 @@ function overlap = VerticalSeamFind(imageOverlap, patchOverlap)
     for r = 1:dim(1)
        for c = 1:dim(2)
           if(c == seam(r))
-              overlap(r,c) = 255;%(imageOverlap(r,c) * .5) + (patchOverlap(r,c) * .5);
+              overlap(r,c) = (imageOverlap(r,c) * .5) + (patchOverlap(r,c) * .5);
           else
               if(c < seam(r))
                 overlap(r,c) = imageOverlap(r,c);
@@ -195,7 +225,7 @@ function overlap = HorizontalSeamFind(imageOverlap, patchOverlap)
     for r = 1:dim(1)
        for c = 1:dim(2)
           if(r == seam(c))
-              overlap(r,c) = 255;%(imageOverlap(r,c) * .5) + (patchOverlap(r,c) * .5);
+              overlap(r,c) = (imageOverlap(r,c) * .5) + (patchOverlap(r,c) * .5);
           else
               if(r < seam(c))
                 overlap(r,c) = imageOverlap(r,c);
@@ -241,7 +271,7 @@ function seam = findSeamHori(squareDif)
             minimum = squareDif(seam(c+1)-1, c);
             seam(c) = seam(c+1)-1;
         end
-        if seam(c+1) < dim(1) && minimum > squareDif(seam(r+1)+1, c)
+        if seam(c+1) < dim(1) && minimum > squareDif(seam(c+1)+1, c)
             seam(c) = seam(c+1)+1;
         end
     end

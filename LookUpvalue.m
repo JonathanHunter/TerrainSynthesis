@@ -1,47 +1,108 @@
 function sum = LookUpvalue(SummedAreaTable, r, c, patchDim, sourceDim)
-    r = sourceDim(1) - r + 1;
-    c = sourceDim(2) - c + 1;
-    %SummedAreaTable = SummedAreaTables([13,9,5,1;14,10,6,2;15,11,7,3;16,12,8,4]);
-    %r = 1;
-    %c = 1;
-    %dim1 = [4,4];
-    %dim2 = [4,4];
+%     r = sourceDim(1) - r + 1;
+%     c = sourceDim(2) - c + 1;
+%     SummedAreaTable = SummedAreaTables([13,9,5,1;14,10,6,2;15,11,7,3;16,12,8,4])
+%     r = 1;
+%     c = 1;
+%     patchDim = [2,2];
+%     sourceDim = [4,4];
     sum = 0;
-    A = r + patchDim(1) - 1;
-    if A > sourceDim(1) % 1
-        C = A - sourceDim(1);
-        A = sourceDim(1);
-        sum = SummedAreaTable(A,c) + SummedAreaTable(C,c); % +A + C
-        if r - 1 > 0 % -B
-            sum = sum - SummedAreaTable(r - 1, c);
-        end
-        E =  c - patchDim(2);
-        if E < 0 % 1 - 1
-            E = sourceDim(2) + E;    
-            sum = sum + SummedAreaTable(A,sourceDim(2)) - SummedAreaTable(A,E); % +D - E
-            if r - 1 > 0 % -F + G
-               sum = sum - SummedAreaTable(r-1,sourceDim(2)) + SummedAreaTable(r-1,E); 
-               sum = sum + SummedAreaTable(C,sourceDim(2)) - SummedAreaTable(C, E); % +H - I
+    UpperRowBoundary = r + patchDim(1) - 1;
+    %wrap around r
+    if UpperRowBoundary > sourceDim(1) 
+        % Get lower boundary
+        LowerRowBoundary = UpperRowBoundary - sourceDim(1); 
+        % fix upper bound
+        UpperRowBoundary = sourceDim(1);   
+        UpperCBoundary =  c + patchDim(2) - 1;
+        
+        % wrap around c
+        if UpperCBoundary > sourceDim(2) 
+            % get lower bound
+            LowerCBoundary = UpperCBoundary - sourceDim(2); 
+            % fix upper bound
+            UpperCBoundary = sourceDim(2);
+                    
+            % remove extra blocks below r
+            sum = sum + SummedAreaTable(UpperRowBoundary, UpperCBoundary) - SummedAreaTable(r - 1, UpperCBoundary); 
+
+            % check for missing overflow blocks
+            if r > 1
+                % add missing overflow blocks
+                sum = sum + SummedAreaTable(LowerRowBoundary, UpperCBoundary);
             end
-        elseif E > 0 % 1 - 2
-            sum = sum - SummedAreaTable(A,E) + SummedAreaTable(r-1,E) - SummedAreaTable(C,E); % -D + E - F
-        end
-    else % 2
-        sum = SummedAreaTable(A,c); % +A
-        if r - 1 > 0 % -B
-            sum = sum - SummedAreaTable(r - 1, c);
-        end
-        E =  c - patchDim(2);
-        if E < 0 % 2 - 1
-            E = sourceDim(2) + E;    
-            sum = sum + SummedAreaTable(A,sourceDim(2)) - SummedAreaTable(A,E); % +D - E
-            if r - 1 > 0 % -F + G
-               sum = sum - SummedAreaTable(r-1,sourceDim(2)) + SummedAreaTable(r-1,E); 
+            
+            % remove extra blocks below c
+            sum = sum + SummedAreaTable(UpperRowBoundary,UpperCBoundary) - SummedAreaTable(UpperRowBoundary,c); 
+            % check for missing overflow blocks
+            if c > 1 
+               % add missing overflow blocks
+               sum = sum + SummedAreaTable(UpperCBoundary, LowerCBoundary); 
             end
-        elseif E > 0 % 2 - 2
-            sum = sum - SummedAreaTable(A,E); % -C
-            if r - 1 > 0 % +D
-               sum = sum + SummedAreaTable(r-1,E); 
+        % no c wrap around
+        else
+            % remove extra blocks below r
+            sum = sum + SummedAreaTable(UpperRowBoundary, UpperCBoundary) - SummedAreaTable(LowerRowBoundary, UpperCBoundary); 
+
+            % check for missing overflow blocks
+            if r > 1
+                % add missing overflow blocks
+                sum = sum + SummedAreaTable(LowerRowBoundary, UpperCBoundary);
+            end
+            
+            % check if unused blocks below c
+            if c > 1 
+               % remove excess blocks below c
+               sum = sum - SummedAreaTable(LowerRowBoundary, c-1); 
+            end
+        end
+    % no r wrap around
+    else 
+        UpperCBoundary =  c + patchDim(2) - 1;
+        % wrap around c
+        if UpperCBoundary > sourceDim(2) 
+            % get lower bound
+            LowerCBoundary = UpperCBoundary - sourceDim(2); 
+            % fix upper bound
+            UpperCBoundary = sourceDim(2);
+            
+            % Get sum of the area
+            sum = SummedAreaTable(UpperRowBoundary, UpperCBoundary); 
+            
+            % remove extra blocks below c
+            sum = sum + SummedAreaTable(UpperRowBoundary,UpperCBoundary) - SummedAreaTable(UpperRowBoundary,c); 
+            % check for missing overflow blocks
+            if c > 1 
+               % add missing overflow blocks
+               sum = sum + SummedAreaTable(UpperCBoundary, LowerCBoundary); 
+            end
+            
+            % check if unused blocks below r
+            if r > 1 
+                % remove excess blocks below r
+                sum = sum - SummedAreaTable(r - 1, UpperCBoundary); 
+            end
+        % no c wrap around
+        else 
+            % Get sum of the area
+            sum = SummedAreaTable(UpperRowBoundary, UpperCBoundary);
+            
+            % check if unused blocks below c
+            if c > 1 
+               % remove excess blocks below c
+               sum = sum - SummedAreaTable(UpperRowBoundary, c-1); 
+            end
+            
+            % check if unused blocks below r
+            if r > 1 
+                % remove excess blocks below r
+                sum = sum - SummedAreaTable(r - 1, UpperCBoundary); 
+            end
+            
+            % check for double removed blocks
+            if r > 1 && c > 1
+               % add double removed blocks back
+               sum = sum + SummedAreaTable(r - 1, c - 1);
             end
         end
     end
