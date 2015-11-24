@@ -9,15 +9,11 @@ function PatchFindingAndPlacement(patchDim, overlapDim, originalImage)
 %     patchDim = [16, 16];
 %     overlapDim = [16,4];
 %     originalImage = double(rgb2gray((imread('C:\Users\Jonathan\Desktop\161', 'jpeg'))));
-    patchDim = [64, 64];
-    overlapDim = [64, 32];
-    originalImage = double((imread('a', 'gif')));
 %     minimum = min(originalImage(:));
 %     maxim = max(originalImage(:));
 %     originalImage = originalImage - minimum;
 %     originalImage = originalImage.*(50/(maxim-minimum));
 %     originalImage = originalImage.*(70/(maxim-minimum));
-%     originalImage = originalImage.*(50/(maxim-minimum));
 %     originalImage = originalImage.*(50/(maxim-minimum));
     dim = size(originalImage);
     newImage = zeros(dim(1) * 3 - 3 * overlapDim(2), dim(2) * 3 - 3 * overlapDim(2));
@@ -41,7 +37,8 @@ function PatchFindingAndPlacement(patchDim, overlapDim, originalImage)
                 else
                     xy = previosPointArray{r, c - patchDim(2) + overlapDim(2)};
                     overlap = GetSection(originalImage, xy(1), xy(2) + patchDim(2) - overlapDim(2), overlapDim(1), overlapDim(2));
-                    SSD = SSDWithAreaExclusion(overlap, originalImage, xy(1), xy(2) + patchDim(2) - overlapDim(2), overlapDim(1), overlapDim(2), patchDim);
+                    seed = rand * 1000;
+                    SSD = SSDWithRandomEval(overlap, originalImage, xy(1), xy(2) + patchDim(2) - overlapDim(2), overlapDim(1), overlapDim(2), patchDim, seed);
                     coord = FindMin(SSD);
                     x = coord(1);
                     y = coord(2);
@@ -50,18 +47,20 @@ function PatchFindingAndPlacement(patchDim, overlapDim, originalImage)
                 if c == 1
                     xy = previosPointArray{r - patchDim(1) + overlapDim(2), c};
                     overlap = GetSection(originalImage, xy(1) + patchDim(1) - overlapDim(2), xy(2), overlapDim(2), overlapDim(1));
-                    SSD = SSDWithAreaExclusion(overlap, originalImage, xy(1) + patchDim(1) - overlapDim(2) , xy(2), overlapDim(2), overlapDim(1), patchDim);
+                    seed = rand * 1000;
+                    SSD = SSDWithRandomEval(overlap, originalImage, xy(1) + patchDim(1) - overlapDim(2) , xy(2), overlapDim(2), overlapDim(1), patchDim, seed);
                     coord = FindMin(SSD);
                     x = coord(1);
                     y = coord(2); 
                 else
+                    seed = rand * 1000;
                     xy = previosPointArray{r, c - patchDim(2) + overlapDim(2)};
                     overlap = GetSection(originalImage, xy(1), xy(2) + patchDim(2) - overlapDim(2), overlapDim(1), overlapDim(2));
-                    SSDVert = SSDWithAreaExclusion(overlap, originalImage, xy(1), xy(2) + patchDim(2) - overlapDim(2), overlapDim(1), overlapDim(2), patchDim);
+                    SSDVert = SSDWithRandomEval(overlap, originalImage, xy(1), xy(2) + patchDim(2) - overlapDim(2), overlapDim(1), overlapDim(2), patchDim, seed);
                     
                     xy = previosPointArray{r - patchDim(1) + overlapDim(2), c};
                     overlap = GetSection(originalImage, xy(1) + patchDim(1) - overlapDim(2), xy(2), overlapDim(2), overlapDim(1));
-                    SSDHori = SSDWithAreaExclusion(overlap, originalImage, xy(1) + patchDim(1) - overlapDim(2) , xy(2), overlapDim(2), overlapDim(1), patchDim);
+                    SSDHori = SSDWithRandomEval(overlap, originalImage, xy(1) + patchDim(1) - overlapDim(2) , xy(2), overlapDim(2), overlapDim(1), patchDim, seed);
                         
                     SSD = SSDVert + SSDHori;
                         
@@ -98,7 +97,8 @@ function PatchFindingAndPlacement(patchDim, overlapDim, originalImage)
     image(newImage)
     figure('Name', 'seams')
     image(newImageSeams)
-    imwrite(newImage,'newImage.gif')
+    newImage = newImage.*(1/50);
+    imwrite(newImage,'newImage.png')
 end
 
 function section = GetSection(Image, r, c, width, length)

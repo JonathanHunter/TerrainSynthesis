@@ -22,5 +22,5 @@ function ssd = sumOfSquaresDifference(patch, source, r, c, patchSum, SAT, crossC
     sourceSum = LookUpvalue(SAT, r, c, patchDim, sourceDim);
     ssd = patchSum + sourceSum - 2 * (crossCorrelation(sourceDim(1) + patchDim(1) - 1 - (r - 1), sourceDim(2) + patchDim(2) - 1 - (c - 1)));
     ssd = ssd/(255 * patchDim(1) * patchDim(2));
-    ssd = ssd + (rand * 200);
+%     ssd = ssd + (rand * 50);
 end

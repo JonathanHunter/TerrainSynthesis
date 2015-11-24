@@ -1,6 +1,12 @@
-function LoadGridFloat()
-    pathFlt = 'C:\Users\Jonathan\Desktop\n47w122\floatn47w122_1.flt';
-    pathHDR = 'C:\Users\Jonathan\Desktop\n47w122\floatn47w122_1.hdr';
+function LoadGridFloatSmaller()
+%     pathFlt = 'C:\Users\Jonathan\Desktop\n47w122\floatn47w122_1.flt';
+%     pathHDR = 'C:\Users\Jonathan\Desktop\n47w122\floatn47w122_1.hdr';
+    pathFlt = 'C:\Users\Jonathan\Desktop\n39w080\floatn39w080_1.flt';
+    pathHDR = 'C:\Users\Jonathan\Desktop\n39w080\floatn39w080_1.hdr';
+    shrink = 10;
+%     pathFlt = 'C:\Users\Jonathan\Desktop\n45w111\floatn45w111_13.flt';
+%     pathHDR = 'C:\Users\Jonathan\Desktop\n45w111\floatn45w111_13.hdr';
+%     shrink = 50;
     k = 255;
     hdr = fopen(pathHDR);
     dim = fscanf(hdr, '%*s%d');
@@ -10,19 +16,30 @@ function LoadGridFloat()
     fclose(ftl);
     i = reshape(a, [dim(1), dim(2)]);
     clear a;
-    temp = zeros(255, 255);
-    for r = 1:255
-       temp(r, :) = i(r, 1:255); 
+    temp = zeros(int32(dim(1)/shrink), int32(dim(2)/shrink));
+    for r = 1:int32(dim(1)/shrink)
+        for c = 1:int32(dim(2)/shrink)
+            x = r * shrink;
+            if(x > dim(1))
+                x = dim(1);
+            end
+            y = c * shrink;
+            if(y > dim(2))
+                y = dim(2);
+            end
+            temp(r, c) = i(x, y); 
+        end
     end
     i = temp;
-    dim = [255, 255];
-%     minimum = min(i(:))
-%     maxim = max(i(:))
-%     i = i - minimum;
-%     i = i.*(50/(maxim-minimum));
+    dim = [int32(dim(1)/shrink), int32(dim(2)/shrink)];
     i = transpose(i);
+    minimum = min(i(:));
+    maxim = max(i(:));
+    i = i - minimum;
+    i = i.*(50/(maxim-minimum));
+
     slopes = zeros(dim(1), dim(2));
-    dist = 30.87;
+    dist = 30.87 / shrink;
     dx = 0;
     dy = 0;
     L = [0, 0, 1];
@@ -57,17 +74,16 @@ function LoadGridFloat()
            slopes(r,c) = d;
        end
     end
-    minimum = min(slopes(:))
-    maxim = max(slopes(:))
+    imwrite(slopes,'a.png')
+    minimum = min(slopes(:));
+    maxim = max(slopes(:));
     slopes = slopes - minimum;
     slopes = slopes.*(50/(maxim-minimum));
-    min(slopes(:))
-    max(slopes(:))
+    min(slopes(:));
+    max(slopes(:));
     figure('Name', 'image')
     image(i)
     figure('Name', 'slopes')
     image(slopes)
-%     slopes = slopes.*(255/k);
-    imwrite(slopes,'a.tif')
-%     PatchFindingAndPlacement([64, 64], [64, 32], slopes)
+	PatchFindingAndPlacement([64, 64], [64, 32], slopes)
 end
