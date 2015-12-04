@@ -1,12 +1,12 @@
 function LoadGridFloatSmaller()
 %     pathFlt = 'C:\Users\Jonathan\Desktop\n47w122\floatn47w122_1.flt';
 %     pathHDR = 'C:\Users\Jonathan\Desktop\n47w122\floatn47w122_1.hdr';
-    pathFlt = 'C:\Users\Jonathan\Desktop\n39w080\floatn39w080_1.flt';
-    pathHDR = 'C:\Users\Jonathan\Desktop\n39w080\floatn39w080_1.hdr';
-    shrink = 10;
-%     pathFlt = 'C:\Users\Jonathan\Desktop\n45w111\floatn45w111_13.flt';
-%     pathHDR = 'C:\Users\Jonathan\Desktop\n45w111\floatn45w111_13.hdr';
-%     shrink = 50;
+%     pathFlt = 'C:\Users\Jonathan\Desktop\n39w080\floatn39w080_1.flt';
+%     pathHDR = 'C:\Users\Jonathan\Desktop\n39w080\floatn39w080_1.hdr';
+%     shrink = 15;
+    pathFlt = 'C:\Users\Jonathan\Desktop\n45w111\floatn45w111_13.flt';
+    pathHDR = 'C:\Users\Jonathan\Desktop\n45w111\floatn45w111_13.hdr';
+    shrink = 100;
     k = 255;
     hdr = fopen(pathHDR);
     dim = fscanf(hdr, '%*s%d');
@@ -15,7 +15,7 @@ function LoadGridFloatSmaller()
     a = fread(ftl, dim(1)*dim(2), 'float32', 'ieee-le');
     fclose(ftl);
     i = reshape(a, [dim(1), dim(2)]);
-    clear a;
+    clear a;    
     temp = zeros(int32(dim(1)/shrink), int32(dim(2)/shrink));
     for r = 1:int32(dim(1)/shrink)
         for c = 1:int32(dim(2)/shrink)
@@ -32,6 +32,15 @@ function LoadGridFloatSmaller()
     end
     i = temp;
     dim = [int32(dim(1)/shrink), int32(dim(2)/shrink)];
+    
+% 	temp = zeros(150, dim(2));
+%     for r = 1:150
+%         temp(r, :) = i(r, 1:dim(2)); 
+%     end
+% 	i = temp;
+% 	dim = [dim(2), 150];
+    
+    
     i = transpose(i);
     minimum = min(i(:));
     maxim = max(i(:));
@@ -74,16 +83,16 @@ function LoadGridFloatSmaller()
            slopes(r,c) = d;
        end
     end
-    imwrite(slopes,'a.png')
+    imwrite(slopes,'Normal_Map.png')
     minimum = min(slopes(:));
     maxim = max(slopes(:));
     slopes = slopes - minimum;
     slopes = slopes.*(50/(maxim-minimum));
     min(slopes(:));
     max(slopes(:));
-    figure('Name', 'image')
+    figure('Name', 'Height_Map')
     image(i)
-    figure('Name', 'slopes')
+    figure('Name', 'Normal_Map')
     image(slopes)
-	PatchFindingAndPlacement([64, 64], [64, 32], slopes)
+	PatchFindingAndPlacement([64, 64], [64, 16], slopes, i)
 end

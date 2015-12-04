@@ -3,7 +3,7 @@ function SSD=SSDWithRandomEval(patch, source, x, y, length, width, patchDim, see
     dim = size(source);
     SSD = zeros(dim(1), dim(2));
     SSD = SSD + 255;
-    numberOfSSDs = dim(1) * dim(2) * .1;
+    numberOfSSDs = dim(1) * dim(2) * .05;
     current = 0;
     while(current < numberOfSSDs)
         r = int32(rand * (dim(1) - 1)) + 1;

@@ -1,5 +1,5 @@
 
-function PatchFindingAndPlacement(patchDim, overlapDim, originalImage)
+function PatchFindingAndPlacement(patchDim, overlapDim, originalImage, colorMap)
 %     patchDim = [64, 64];
 %     overlapDim = [64,16];
 %     originalImage = double((imread('C:\Users\Jonathan\Desktop\lily2_input', 'gif')));
@@ -19,7 +19,8 @@ function PatchFindingAndPlacement(patchDim, overlapDim, originalImage)
     newImage = zeros(dim(1) * 3 - 3 * overlapDim(2), dim(2) * 3 - 3 * overlapDim(2));
     newImageSeams = zeros(dim(1) * 3 - 3 * overlapDim(2), dim(2) * 3 - 3 * overlapDim(2));
     finalDim = size(newImage);
-    previosPointArray = cell(finalDim(1), finalDim(2));
+    previousPoint = cell(finalDim(1), finalDim(2));
+    metaData = cell(finalDim(1), finalDim(2));
     r = 1;
     x = 1;
     y = 1;
@@ -27,38 +28,52 @@ function PatchFindingAndPlacement(patchDim, overlapDim, originalImage)
         r / finalDim(1)
         c = 1;
         while c < finalDim(2)
-%             c / finalDim(2)
             if r == 1
                 if c == 1
                     x = rand * (dim(1) - patchDim(1)) + 1;
                     y = rand * (dim(2) - patchDim(2)) + 1;
-                    x = int32(x)
-                    y = int32(y)
+                    x = int32(x);
+                    y = int32(y);
+                    for metaR = 1 : patchDim(1)
+                       for metaC = 1 : patchDim(2)
+                           metaData{metaR + r - 1, metaC + c - 1} = [x + metaR, y + metaC];
+                       end
+                    end
                 else
-                    xy = previosPointArray{r, c - patchDim(2) + overlapDim(2)};
+                    xy = previousPoint{r, c - patchDim(2) + overlapDim(2)};
                     overlap = GetSection(originalImage, xy(1), xy(2) + patchDim(2) - overlapDim(2), overlapDim(1), overlapDim(2));
                     seed = rand * 1000;
                     SSD = SSDWithRandomEval(overlap, originalImage, xy(1), xy(2) + patchDim(2) - overlapDim(2), overlapDim(1), overlapDim(2), patchDim, seed);
                     coord = FindMin(SSD);
                     x = coord(1);
                     y = coord(2);
+                    for metaR = 1 : patchDim(1)
+                       for metaC = overlapDim(2) : patchDim(2)
+                           metaData{metaR + r - 1, metaC + c - 1} = [x + metaR, y + metaC];
+                       end
+                    end
                 end
             else
                 if c == 1
-                    xy = previosPointArray{r - patchDim(1) + overlapDim(2), c};
+                    xy = previousPoint{r - patchDim(1) + overlapDim(2), c};
                     overlap = GetSection(originalImage, xy(1) + patchDim(1) - overlapDim(2), xy(2), overlapDim(2), overlapDim(1));
                     seed = rand * 1000;
                     SSD = SSDWithRandomEval(overlap, originalImage, xy(1) + patchDim(1) - overlapDim(2) , xy(2), overlapDim(2), overlapDim(1), patchDim, seed);
                     coord = FindMin(SSD);
                     x = coord(1);
                     y = coord(2); 
+                    for metaR = overlapDim(2) : patchDim(1)
+                       for metaC = 1 : patchDim(2)
+                           metaData{metaR + r - 1, metaC + c - 1} = [x + metaR, y + metaC];
+                       end
+                    end
                 else
                     seed = rand * 1000;
-                    xy = previosPointArray{r, c - patchDim(2) + overlapDim(2)};
+                    xy = previousPoint{r, c - patchDim(2) + overlapDim(2)};
                     overlap = GetSection(originalImage, xy(1), xy(2) + patchDim(2) - overlapDim(2), overlapDim(1), overlapDim(2));
                     SSDVert = SSDWithRandomEval(overlap, originalImage, xy(1), xy(2) + patchDim(2) - overlapDim(2), overlapDim(1), overlapDim(2), patchDim, seed);
                     
-                    xy = previosPointArray{r - patchDim(1) + overlapDim(2), c};
+                    xy = previousPoint{r - patchDim(1) + overlapDim(2), c};
                     overlap = GetSection(originalImage, xy(1) + patchDim(1) - overlapDim(2), xy(2), overlapDim(2), overlapDim(1));
                     SSDHori = SSDWithRandomEval(overlap, originalImage, xy(1) + patchDim(1) - overlapDim(2) , xy(2), overlapDim(2), overlapDim(1), patchDim, seed);
                         
@@ -66,39 +81,40 @@ function PatchFindingAndPlacement(patchDim, overlapDim, originalImage)
                         
                     coord = FindMin(SSD);
                     x = coord(1);
-                    y = coord(2);         
-                    
-                    
-%                     overlap = GetSection(newImage, r, c, overlapDim(1), overlapDim(2));
-%                     SSD = SSDWithAreaExclusion(overlap, originalImage, x, y, overlapDim(1), overlapDim(2), patchDim);
-%                     
-%                     overlap = GetSection(newImage, r, c, overlapDim(2), overlapDim(1));
-%                     SSD = SSDWithAreaExclusion(overlap, originalImage, x, y, overlapDim(2), overlapDim(1), patchDim);
-%                     
-%                     overlap = GetSection(newImage, r, c, overlapDim(1), overlapDim(2));
-%                     SSDVert = SSDWithAreaExclusion(overlap, originalImage, x, y, overlapDim(1), overlapDim(2), patchDim);
-%                     
-%                     overlap = GetSection(newImage, r, c, overlapDim(2), overlapDim(1));
-%                     SSDHori = SSDWithAreaExclusion(overlap, originalImage, x, y, overlapDim(2), overlapDim(1), patchDim);
-                    
-                    
+                    y = coord(2);
+                    for metaR = overlapDim(2) : patchDim(1)
+                       for metaC = overlapDim(2) : patchDim(2)
+                           metaData{metaR + r - 1, metaC + c - 1} = [x + metaR, y + metaC];
+                       end
+                    end
                 end
             end
-            previosPointArray{r,c} = [x,y];
+            previousPoint{r,c} = [x,y];
             patch = GetSection(originalImage, x, y, patchDim(1), patchDim(2));
-            images = PlaceSection(newImage, newImageSeams, patch, r, c, overlapDim);
+            images = PlaceSection(newImage, newImageSeams, patch, r, c, overlapDim, metaData, x, y, r, c);
             newImage = images{1};
             newImageSeams = images{2};
+            metaData = images{3};
             c = c + patchDim(2) - overlapDim(2);   
         end
         r = r + patchDim(1) - overlapDim(2);
     end
-    figure('Name', 'image')
+    figure('Name', 'Generated_Normal_Map')
     image(newImage)
-    figure('Name', 'seams')
+    figure('Name', 'Generated_Normal_Map_With_Seams')
     image(newImageSeams)
     newImage = newImage.*(1/50);
-    imwrite(newImage,'newImage.png')
+    imwrite(newImage,'Generated_Normal_Map.png')
+    color = zeros(finalDim(1), finalDim(2));
+    for r = 1 : finalDim(1)
+       for c = 1 : finalDim(2)
+          color(r,c) = colorMap(metaData{r,c}(1), metaData{r,c}(2));
+       end
+    end
+    figure('Name', 'Generated_Terrain')
+    image(color)
+    color = color.*(1/50);
+    imwrite(color,'Generated_Terrain.png')
 end
 
 function section = GetSection(Image, r, c, width, length)
@@ -120,57 +136,61 @@ function section = GetSection(Image, r, c, width, length)
     end
 end
 
-function images = PlaceSection(Image, ImageSeam, patch, r, c, overlapDim)
-    image = cell(2);
+function images = PlaceSection(Image, ImageSeam, patch, r, c, overlapDim, metaData, x, y, or, oc)
+    image = cell(3);
     dim = size(patch);
     if r == 1
         if c > 1
-            overlaps = VerticalSeamFind(GetSection(Image, r, c, overlapDim(1), overlapDim(2)), GetSection(patch, 1, 1, overlapDim(1), overlapDim(2)));
+            overlaps = VerticalSeamFind(GetSection(Image, r, c, overlapDim(1), overlapDim(2)), GetSection(patch, 1, 1, overlapDim(1), overlapDim(2)), metaData, x, y, or, oc);
             overlap = overlaps{1};
             overlapSeam = overlaps{2};
-            for x = r : (dim(1) + r - 1)
-               Image(x,c: c + overlapDim(2) - 1) = overlap(x - r + 1, 1:overlapDim(2));
-               ImageSeam(x,c: c + overlapDim(2) - 1) = overlapSeam(x - r + 1, 1:overlapDim(2));
-               Image(x,c + overlapDim(2) :(dim(2)+ c )) = patch(x - r + 1, overlapDim(2):dim(2));
-               ImageSeam(x,c + overlapDim(2) :(dim(2)+ c )) = patch(x - r + 1, overlapDim(2):dim(2));
+            metaData = overlaps{3};
+            for a = r : (dim(1) + r - 1)
+               Image(a,c: c + overlapDim(2) - 1) = overlap(a - r + 1, 1:overlapDim(2));
+               ImageSeam(a,c: c + overlapDim(2) - 1) = overlapSeam(a - r + 1, 1:overlapDim(2));
+               Image(a,c + overlapDim(2) :(dim(2)+ c )) = patch(a - r + 1, overlapDim(2):dim(2));
+               ImageSeam(a,c + overlapDim(2) :(dim(2)+ c )) = patch(a - r + 1, overlapDim(2):dim(2));
             end
         else
-            for x = r : (dim(1) + r - 1)
-               Image(x,c:(dim(2)+ c - 1)) = patch(x - r + 1,1:dim(2));
-               ImageSeam(x,c:(dim(2)+ c - 1)) = patch(x - r + 1,1:dim(2));
+            for a = r : (dim(1) + r - 1)
+               Image(a,c:(dim(2)+ c - 1)) = patch(a - r + 1,1:dim(2));
+               ImageSeam(a,c:(dim(2)+ c - 1)) = patch(a - r + 1,1:dim(2));
             end
         end
     else
         if c > 1  
-            overlaps = VerticalSeamFind(GetSection(Image, r, c, overlapDim(1), overlapDim(2)), GetSection(patch, 1, 1, overlapDim(1), overlapDim(2)));
+            overlaps = VerticalSeamFind(GetSection(Image, r, c, overlapDim(1), overlapDim(2)), GetSection(patch, 1, 1, overlapDim(1), overlapDim(2)), metaData, x, y, or, oc);
             overlap = overlaps{1};
             overlapSeam = overlaps{2};
-            for x = r:r+overlapDim(1)-1
-               Image(x ,c: c + overlapDim(2) - 1) = overlap(x - r + 1, 1:overlapDim(2));
-               ImageSeam(x ,c: c + overlapDim(2) - 1) = overlapSeam(x - r + 1, 1:overlapDim(2));
+            metaData = overlaps{3};
+            for a = r:r+overlapDim(1)-1
+               Image(a ,c: c + overlapDim(2) - 1) = overlap(a - r + 1, 1:overlapDim(2));
+               ImageSeam(a ,c: c + overlapDim(2) - 1) = overlapSeam(a - r + 1, 1:overlapDim(2));
             end     
-            overlaps = HorizontalSeamFind(GetSection(Image, r, c, overlapDim(2), overlapDim(1)), GetSection(patch, 1, 1, overlapDim(2), overlapDim(1)));
+            overlaps = HorizontalSeamFind(GetSection(Image, r, c, overlapDim(2), overlapDim(1)), GetSection(patch, 1, 1, overlapDim(2), overlapDim(1)), metaData, x, y, or, oc);
             overlap = overlaps{1};
             overlapSeam = overlaps{2};
-            for x = r:r+overlapDim(2)-1
-               Image(x,c + overlapDim(2): c + overlapDim(1) - 1) = overlap(x - r + 1, 1 + overlapDim(2):overlapDim(1));
-               ImageSeam(x,c + overlapDim(2): c + overlapDim(1) - 1) = overlapSeam(x - r + 1, 1 + overlapDim(2):overlapDim(1));
+            metaData = overlaps{3};
+            for a = r:r+overlapDim(2)-1
+               Image(a,c : c + overlapDim(1) - 1) = overlap(a - r + 1, 1 :overlapDim(1));
+               ImageSeam(a,c : c + overlapDim(1) - 1) = overlapSeam(a - r + 1, 1 :overlapDim(1));
             end    
-            for x = r+overlapDim(2):r+overlapDim(1)-1
-                Image(x ,c + overlapDim(2) :(dim(2)+ c )) = patch(x - r + 1, overlapDim(2):dim(2));
-                ImageSeam(x ,c + overlapDim(2) :(dim(2)+ c )) = patch(x - r + 1, overlapDim(2):dim(2));
+            for a = r+overlapDim(2):r+overlapDim(1)-1
+                Image(a ,c + overlapDim(2) :(dim(2)+ c )) = patch(a - r + 1, overlapDim(2):dim(2));
+                ImageSeam(a ,c + overlapDim(2) :(dim(2)+ c )) = patch(a - r + 1, overlapDim(2):dim(2));
             end
         else
-            overlaps = HorizontalSeamFind(GetSection(Image, r, c, overlapDim(2), overlapDim(1)), GetSection(patch, 1, 1, overlapDim(2), overlapDim(1)));
+            overlaps = HorizontalSeamFind(GetSection(Image, r, c, overlapDim(2), overlapDim(1)), GetSection(patch, 1, 1, overlapDim(2), overlapDim(1)), metaData, x, y, or, oc);
             overlap = overlaps{1};
             overlapSeam = overlaps{2};
-            for x = r:r+overlapDim(2)-1
-               Image(x,c: c + overlapDim(1) - 1) = overlap(x - r + 1, 1:overlapDim(1));
-               ImageSeam(x,c: c + overlapDim(1) - 1) = overlapSeam(x - r + 1, 1:overlapDim(1));
+            metaData = overlaps{3};
+            for a = r:r+overlapDim(2)-1
+               Image(a,c: c + overlapDim(1) - 1) = overlap(a - r + 1, 1:overlapDim(1));
+               ImageSeam(a,c: c + overlapDim(1) - 1) = overlapSeam(a - r + 1, 1:overlapDim(1));
             end            
-            for x = r+overlapDim(2)-1 : (dim(1) + r - 1)
-               Image(x,c:(dim(2)+ c - 1)) = patch(x - r + 1,1:dim(2));
-               ImageSeam(x,c:(dim(2)+ c - 1)) = patch(x - r + 1,1:dim(2));
+            for a = r+overlapDim(2)-1 : (dim(1) + r - 1)
+               Image(a,c:(dim(2)+ c - 1)) = patch(a - r + 1,1:dim(2));
+               ImageSeam(a,c:(dim(2)+ c - 1)) = patch(a - r + 1,1:dim(2));
             end
         end
     end
@@ -183,7 +203,7 @@ function images = PlaceSection(Image, ImageSeam, patch, r, c, overlapDim)
 %            Image(x,c:(dim(2)+ c - 1)) = patch(x - r + 1,1:dim(2));
 %        end
 %     end
-    images = {Image, ImageSeam};
+    images = {Image, ImageSeam, metaData};
 end
 
 function blended = Blend(ImageRow, patchRow)
@@ -194,8 +214,8 @@ function blended = Blend(ImageRow, patchRow)
     end
 end
 
-function overlaps = VerticalSeamFind(imageOverlap, patchOverlap)
-    overlaps = cell(2);
+function overlaps = VerticalSeamFind(imageOverlap, patchOverlap, metaData, x, y, or, oc)
+    overlaps = cell(3);
     squareDif = imageOverlap - patchOverlap;
     squareDif = squareDif.^2;
     seam = findSeamVert(squareDif);
@@ -207,6 +227,7 @@ function overlaps = VerticalSeamFind(imageOverlap, patchOverlap)
           if(c == seam(r))
               overlap(r,c) = patchOverlap(r,c);%(imageOverlap(r,c) * .5) + (patchOverlap(r,c) * .5);
               overlapSeam(r,c) = 0;
+              metaData{r + or -1, c + oc - 1} = [x + r - 1, y + c - 1];
           else
               if(c < seam(r))
                 overlap(r,c) = imageOverlap(r,c);
@@ -214,11 +235,12 @@ function overlaps = VerticalSeamFind(imageOverlap, patchOverlap)
               else
                 overlap(r,c) = patchOverlap(r,c);
                 overlapSeam(r,c) = patchOverlap(r,c);
+                metaData{r + or -1, c + oc - 1} = [x + r - 1, y + c - 1];
               end
           end
        end
     end
-    overlaps = {overlap, overlapSeam};
+    overlaps = {overlap, overlapSeam, metaData};
 end
 
 function seam = findSeamVert(squareDif)
@@ -261,8 +283,8 @@ function seam = findSeamVert(squareDif)
     end
 end
 
-function overlaps = HorizontalSeamFind(imageOverlap, patchOverlap)
-    overlaps = cell(2);
+function overlaps = HorizontalSeamFind(imageOverlap, patchOverlap, metaData, x, y, or, oc)
+    overlaps = cell(3);
     squareDif = imageOverlap - patchOverlap;
     squareDif = squareDif.^2;
     seam = findSeamHori(squareDif);
@@ -274,6 +296,7 @@ function overlaps = HorizontalSeamFind(imageOverlap, patchOverlap)
           if(r == seam(c))
               overlap(r,c) = patchOverlap(r,c);%(imageOverlap(r,c) * .5) + (patchOverlap(r,c) * .5);
               overlapSeam(r,c) = 255;
+              metaData{r + or - 1,c + oc - 1} = [x + r - 1, y + c - 1];
           else
               if(r < seam(c))
                 overlap(r,c) = imageOverlap(r,c);
@@ -281,11 +304,12 @@ function overlaps = HorizontalSeamFind(imageOverlap, patchOverlap)
               else
                 overlap(r,c) = patchOverlap(r,c);
                 overlapSeam(r,c) = patchOverlap(r,c);
+                metaData{r + or - 1, c + oc - 1} = [x + r - 1, y + c - 1];
               end
           end
        end
     end
-    overlaps = {overlap, overlapSeam};
+    overlaps = {overlap, overlapSeam, metaData};
 end
 
 function seam = findSeamHori(squareDif)
