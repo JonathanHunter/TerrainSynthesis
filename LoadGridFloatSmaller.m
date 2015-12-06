@@ -1,13 +1,15 @@
 function LoadGridFloatSmaller()
 %     pathFlt = 'C:\Users\Jonathan\Desktop\n47w122\floatn47w122_1.flt';
 %     pathHDR = 'C:\Users\Jonathan\Desktop\n47w122\floatn47w122_1.hdr';
-%     pathFlt = 'C:\Users\Jonathan\Desktop\n39w080\floatn39w080_1.flt';
-%     pathHDR = 'C:\Users\Jonathan\Desktop\n39w080\floatn39w080_1.hdr';
-%     shrink = 15;
-    pathFlt = 'C:\Users\Jonathan\Desktop\n45w111\floatn45w111_13.flt';
-    pathHDR = 'C:\Users\Jonathan\Desktop\n45w111\floatn45w111_13.hdr';
+    terrain = imread('Terrain', 'png');
+    pathFlt = 'C:\Users\Jonathan\Desktop\n39w080\floatn39w080_1.flt';
+    pathHDR = 'C:\Users\Jonathan\Desktop\n39w080\floatn39w080_1.hdr';
     % How much to shrink the height field by
-    shrink = 100;
+    shrink = 15;
+%     pathFlt = 'C:\Users\Jonathan\Desktop\n45w111\floatn45w111_13.flt';
+%     pathHDR = 'C:\Users\Jonathan\Desktop\n45w111\floatn45w111_13.hdr';
+%     % How much to shrink the height field by
+%     shrink = 100;
     % Read in height field dimensions
     hdr = fopen(pathHDR);
     dim = fscanf(hdr, '%*s%d');
@@ -35,13 +37,13 @@ function LoadGridFloatSmaller()
     end
     i = temp;
     dim = [int32(dim(1)/shrink), int32(dim(2)/shrink)];    
-%   % Grab specific section from height field
-% 	temp = zeros(150, dim(2));
-%     for r = 1:150
-%         temp(r, :) = i(r, 1:dim(2)); 
-%     end
-% 	i = temp;
-% 	dim = [dim(2), 150];   
+  % Grab specific section from height field
+	temp = zeros(150, dim(2));
+    for r = 1:150
+        temp(r, :) = i(r, 1:dim(2)); 
+    end
+	i = temp;
+	dim = [dim(2), 150];   
     % Normalize data
     i = transpose(i);
     minimum = min(i(:));
@@ -102,5 +104,5 @@ function LoadGridFloatSmaller()
     figure('Name', 'Normal_Map')
     image(slopes)
     % Generate terrain
-	PatchFindingAndPlacement([64, 64], [64, 16], slopes, i)
+	PatchFindingAndPlacement([64, 64], [64, 16], slopes, terrain)
 end
