@@ -129,6 +129,5 @@ function PatchFindingAndPlacement(patchDim, overlapDim, originalImage, colorMap)
     end
     figure('Name', 'Generated_Terrain')
     image(color)
-    whos color
     imwrite(color,'Generated_Terrain.jpg','jpg','Comment','My JPEG file')
 end
