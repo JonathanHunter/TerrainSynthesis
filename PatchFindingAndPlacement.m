@@ -116,7 +116,7 @@ function PatchFindingAndPlacement(patchDim, overlapDim, originalImage, colorMap)
     image(generatedNormalMap)
     figure('Name', 'Generated_Normal_Map_With_Seams')
     image(generatedNormalMapWithSeams)
-    generatedNormalMap = generatedNormalMap.*(1/50);
+    generatedNormalMap = generatedNormalMap.*(1/64);
     imwrite(generatedNormalMap,'Generated_Normal_Map.png')
     % Use metaData to construct a color version of the generated terrain
     color = uint8(zeros(finalDimensions(1), finalDimensions(2), 3));

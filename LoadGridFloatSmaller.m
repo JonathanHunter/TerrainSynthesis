@@ -1,51 +1,56 @@
 function LoadGridFloatSmaller()
-%     pathFlt = 'C:\Users\Jonathan\Desktop\n47w122\floatn47w122_1.flt';
-%     pathHDR = 'C:\Users\Jonathan\Desktop\n47w122\floatn47w122_1.hdr';
     terrain = imread('Terrain', 'png');
     pathFlt = 'C:\Users\Jonathan\Desktop\Graphics Research\n39w080\floatn39w080_1.flt';
     pathHDR = 'C:\Users\Jonathan\Desktop\Graphics Research\n39w080\floatn39w080_1.hdr';
     % How much to shrink the height field by
     shrink = 15;
-%     pathFlt = 'C:\Users\Jonathan\Desktop\n45w111\floatn45w111_13.flt';
-%     pathHDR = 'C:\Users\Jonathan\Desktop\n45w111\floatn45w111_13.hdr';
-%     % How much to shrink the height field by
-%     shrink = 100;
     % Read in height field dimensions
     hdr = fopen(pathHDR);
     dim = fscanf(hdr, '%*s%d');
     fclose(hdr);
     % Read in height field
     ftl = fopen(pathFlt);
-    a = fread(ftl, dim(1)*dim(2), 'float32', 'ieee-le');
+    a = fread(ftl, dim(1) * dim(2), 'float32', 'ieee-le');
     fclose(ftl);
     i = reshape(a, [dim(1), dim(2)]);
     clear a;    
     % Shrink height field by specified amount
-    temp = zeros(int32(dim(1)/shrink), int32(dim(2)/shrink));
-    for r = 1:int32(dim(1)/shrink)
-        for c = 1:int32(dim(2)/shrink)
-            x = r * shrink;
-            if(x > dim(1))
-                x = dim(1);
-            end
-            y = c * shrink;
-            if(y > dim(2))
-                y = dim(2);
-            end
-            temp(r, c) = i(x, y); 
-        end
+    temp = zeros(int32(dim(1) / shrink), int32(dim(2) / shrink));
+    r = 1;
+    % Shrink by averaging the pixels
+    while r <= dim(1)
+       c = 1;
+       if r + shrink > dim(1)
+           rowLimit = dim(1);
+       else
+           rowLimit = r + shrink;
+       end
+       while c <= dim(2)
+           if c + shrink > dim(2)
+               colLimit = dim(2);
+           else
+               colLimit = c + shrink;
+           end
+           s = 0.0;
+           for row = r : rowLimit
+                s = s + sum(i(row, c : colLimit));
+           end
+           temp(int32(r / shrink) + 1,int32(c / shrink) + 1) = s / ((colLimit - c) * (rowLimit - r));
+           c = c + shrink;
+       end
+       r = r + shrink;
     end
     i = temp;
-    dim = [int32(dim(1)/shrink), int32(dim(2)/shrink)];    
-  % Grab specific section from height field
-	temp = zeros(150, dim(2));
-    for r = 1:150
-        temp(r, :) = i(r, 1:dim(2)); 
+    dim = [int32(dim(1) / shrink), int32(dim(2) / shrink)];
+    % Grab specific section from height field
+    temp = zeros(int32(dim(1) / 1.5), dim(2));
+    for r = 1 : int32(dim(1) / 1.5)
+        temp(r, :) = i(r, 1 : dim(2));
     end
-	i = temp;
-	dim = [dim(2), 150];   
+    i = temp;
     % Normalize data
     i = transpose(i);
+    dim = size(i);
     minimum = min(i(:));
     maxim = max(i(:));
     i = i - minimum;
@@ -91,13 +96,18 @@ function LoadGridFloatSmaller()
        end
     end
     sprintf('Normal Map Generation complete!')
+    % Normalize the data
+    minimum = min(i(:));
+    maxim = max(i(:));
+    i = i - minimum;
+    i = i.*(1/(maxim-minimum));
+    % Write out height map
+    imwrite(i,'Height_Map.png')
     % Write out normal map
     imwrite(slopes,'Normal_Map.png')
-    % Normalize the data
-    minimum = min(slopes(:));
-    maxim = max(slopes(:));
-    slopes = slopes - minimum;
-    slopes = slopes.*(50/(maxim-minimum));
+    % Normalize the data for figure display
+    i = i.*64;
+    slopes = slopes.*64;
     % Generate figures
     figure('Name', 'Height_Map')
     image(i)
