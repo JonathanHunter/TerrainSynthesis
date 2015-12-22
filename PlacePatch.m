@@ -1,4 +1,5 @@
 function images = PlacePatch(Image, ImageSeam, metaData, patch, r, c, x, y, overlapDim)
+    imageDim = size(Image);
     dim = size(patch);
     if r == 1
         % Top Left cornor: Just place patch
@@ -15,30 +16,50 @@ function images = PlacePatch(Image, ImageSeam, metaData, patch, r, c, x, y, over
             overlap = overlaps{1};
             overlapSeam = overlaps{2};
             metaData = overlaps{3};
+            % Ensure patch placement doesn't go over image length
+            if c + dim(2) >= imageDim(2)
+                colLimit = imageDim(2);
+                patchColLimit = dim(2) - (c + dim(2) - imageDim(2));
+            else
+                colLimit = (dim(2) + c);
+                patchColLimit = dim(2);
+            end
             % Place patch including new merged overlap
             for row = r : (dim(1) + r - 1)
                Image(row, c : c + overlapDim(2) - 1) = overlap(row - r + 1, 1 : overlapDim(2));
                ImageSeam(row, c : c + overlapDim(2) - 1) = overlapSeam(row - r + 1, 1 : overlapDim(2));
-               Image(row, c + overlapDim(2) : (dim(2) + c )) = patch(row - r + 1, overlapDim(2) : dim(2));
-               ImageSeam(row, c + overlapDim(2) : (dim(2) + c )) = patch(row - r + 1, overlapDim(2) : dim(2));
+               Image(row, c + overlapDim(2) : colLimit) = patch(row - r + 1, overlapDim(2) : patchColLimit);
+               ImageSeam(row, c + overlapDim(2) : colLimit) = patch(row - r + 1, overlapDim(2) : patchColLimit);
             end
         end
     else
         % First Column: Only overlap on top of patch
-        if c == 1             
+        if c == 1
             % Merge overlap
             overlaps = HorizontalSeamFind(GetSectionFromMatrix(Image, r, c, overlapDim(2), overlapDim(1)), GetSectionFromMatrix(patch, 1, 1, overlapDim(2), overlapDim(1)), metaData, x, y, r, c);
             % Get return values
             overlap = overlaps{1};
             overlapSeam = overlaps{2};
             metaData = overlaps{3};
+            % Ensure patch placement doesn't go over image length
+            if r + overlapDim(2) >= imageDim(1)
+                rowLimit = imageDim(1);
+            else
+                rowLimit = r + overlapDim(2) - 1;
+            end
             % Place overlap
-            for row = r : r + overlapDim(2) - 1
+            for row = r : rowLimit
                Image(row, c : c + overlapDim(1) - 1) = overlap(row - r + 1, 1 : overlapDim(1));
                ImageSeam(row, c : c + overlapDim(1) - 1) = overlapSeam(row - r + 1, 1 : overlapDim(1));
-            end            
+            end
+            % Ensure patch placement doesn't go over image length
+            if r + dim(1) >= imageDim(1)
+                rowLimit = imageDim(1);
+            else
+                rowLimit = (dim(1) + r - 1);
+            end
             % Place rest of patch
-            for row = r + overlapDim(2) - 1 : (dim(1) + r - 1)
+            for row = r + overlapDim(2) - 1 : rowLimit
                Image(row, c : (dim(2) + c - 1)) = patch(row - r + 1, 1 : dim(2));
                ImageSeam(row, c : (dim(2) + c - 1)) = patch(row - r + 1, 1 : dim(2));
             end
@@ -50,10 +71,23 @@ function images = PlacePatch(Image, ImageSeam, metaData, patch, r, c, x, y, over
             overlap = overlaps{1};
             overlapSeam = overlaps{2};
             metaData = overlaps{3};
+            % Ensure patch placement doesn't go over image length
+            if r + overlapDim(1) >= imageDim(1)
+                rowLimit = imageDim(1);
+            else
+                rowLimit = r + overlapDim(1) - 1;
+            end
+            if c + overlapDim(2) >= imageDim(2)
+                colLimit = imageDim(2);
+                patchColLimit = imageDim(2) - c + 1;
+            else
+                colLimit = c + overlapDim(2) - 1;
+                patchColLimit = overlapDim(2);
+            end
             % Place vertical overlap
-            for row = r : r + overlapDim(1) - 1
-               Image(row , c : c + overlapDim(2) - 1) = overlap(row - r + 1, 1 : overlapDim(2));
-               ImageSeam(row , c : c + overlapDim(2) - 1) = overlapSeam(row - r + 1, 1 : overlapDim(2));
+            for row = r : rowLimit
+               Image(row , c : colLimit) = overlap(row - r + 1, 1 : patchColLimit);
+               ImageSeam(row , c : colLimit) = overlapSeam(row - r + 1, 1 : patchColLimit);
             end     
             % Merge horizontal overlap
             overlaps = HorizontalSeamFind(GetSectionFromMatrix(Image, r, c, overlapDim(2), overlapDim(1)), GetSectionFromMatrix(patch, 1, 1, overlapDim(2), overlapDim(1)), metaData, x, y, r, c);
@@ -61,15 +95,41 @@ function images = PlacePatch(Image, ImageSeam, metaData, patch, r, c, x, y, over
             overlap = overlaps{1};
             overlapSeam = overlaps{2};
             metaData = overlaps{3};
+            % Ensure patch placement doesn't go over image length
+            if r + overlapDim(2) >= imageDim(1)
+                rowLimit = imageDim(1);
+            else
+                rowLimit = r + overlapDim(2) - 1;
+            end
+            if c + overlapDim(1) >= imageDim(2)
+                colLimit = imageDim(2);
+                patchColLimit = imageDim(2) - c + 1;
+            else
+                colLimit = c + overlapDim(1) - 1;
+                patchColLimit = overlapDim(1);
+            end
             % Place horizontal overlap
-            for row = r : r + overlapDim(2) - 1
-               Image(row, c : c + overlapDim(1) - 1) = overlap(row - r + 1, 1 : overlapDim(1));
-               ImageSeam(row, c : c + overlapDim(1) - 1) = overlapSeam(row - r + 1, 1 : overlapDim(1));
+            for row = r : rowLimit
+               Image(row, c : colLimit) = overlap(row - r + 1, 1 : patchColLimit);
+               ImageSeam(row, c : colLimit) = overlapSeam(row - r + 1, 1 : patchColLimit);
             end    
+            % Ensure patch placement doesn't go over image length
+            if r + dim(1) >= imageDim(1)
+                rowLimit = imageDim(1);
+            else
+                rowLimit = dim(1) + r - 1;
+            end
+            if c + dim(2) >= imageDim(2)
+                colLimit = imageDim(2);
+                patchColLimit = imageDim(2) - c;
+            else
+                colLimit = dim(2) + c;
+                patchColLimit = dim(2);
+            end
             % Place rest of patch
-            for row = r + overlapDim(2) : r + overlapDim(1) - 1
-                Image(row , c + overlapDim(2) : (dim(2)+ c )) = patch(row - r + 1, overlapDim(2) : dim(2));
-                ImageSeam(row , c + overlapDim(2) : (dim(2)+ c )) = patch(row - r + 1, overlapDim(2) : dim(2));
+            for row = r + overlapDim(2) - 1 : rowLimit
+               Image(row, c + overlapDim(2) : colLimit) = patch(row - r + 1, overlapDim(2) : patchColLimit);
+               ImageSeam(row, c + overlapDim(2) : colLimit) = patch(row - r + 1, overlapDim(2) : patchColLimit);
             end
         end
     end

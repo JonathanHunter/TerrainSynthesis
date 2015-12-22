@@ -2,8 +2,8 @@ function LoadGridFloatSmaller()
 %     pathFlt = 'C:\Users\Jonathan\Desktop\n47w122\floatn47w122_1.flt';
 %     pathHDR = 'C:\Users\Jonathan\Desktop\n47w122\floatn47w122_1.hdr';
     terrain = imread('Terrain', 'png');
-    pathFlt = 'C:\Users\Jonathan\Desktop\n39w080\floatn39w080_1.flt';
-    pathHDR = 'C:\Users\Jonathan\Desktop\n39w080\floatn39w080_1.hdr';
+    pathFlt = 'C:\Users\Jonathan\Desktop\Graphics Research\n39w080\floatn39w080_1.flt';
+    pathHDR = 'C:\Users\Jonathan\Desktop\Graphics Research\n39w080\floatn39w080_1.hdr';
     % How much to shrink the height field by
     shrink = 15;
 %     pathFlt = 'C:\Users\Jonathan\Desktop\n45w111\floatn45w111_13.flt';
